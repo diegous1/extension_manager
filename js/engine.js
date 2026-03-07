@@ -254,6 +254,10 @@ var ExtensionModel = function(e) {
 
   // Get the smallest available icon.
   var smallestIcon = function(icons) {
+    if(!icons || !icons.length) {
+      return '';
+    }
+
     var smallest = _(icons).chain().pluck('size').min().value();
     var icon = _(icons).find({size: smallest});
     return (icon && icon.url) || '';
