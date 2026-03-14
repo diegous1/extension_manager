@@ -21,8 +21,8 @@ document.addEventListener("DOMContentLoaded", function() {
       return self.toggled().length > 0;
     });
 
-    self.toggleStyle = ko.pureComputed(function() {
-      return (self.any()) ? 'fa-toggle-off' : 'fa-toggle-on'
+    self.toggleIcon = ko.pureComputed(function() {
+      return (self.any()) ? 'toggle-left' : 'toggle-right'
     });
 
     var disableFilterFn = function(item) {
@@ -58,6 +58,20 @@ document.addEventListener("DOMContentLoaded", function() {
     self.switch = new SwitchViewModel(self.exts, self.profiles, self.opts);
     self.search = new SearchViewModel();
     self.activeProfile = ko.observable().extend({persistable: "activeProfile"});
+    self.activeTab = ko.observable('extensions');
+    
+    // Auto-select first available tab
+    ko.computed(function() {
+      if (self.opts.groupApps()) {
+        if (self.listedExtensions.any() && (self.activeTab() !== 'extensions' && self.activeTab() !== 'apps' && self.activeTab() !== 'favorites')) {
+          self.activeTab('extensions');
+        } else if (!self.listedExtensions.any() && self.listedApps.any() && self.activeTab() === 'extensions') {
+          self.activeTab('apps');
+        } else if (!self.listedExtensions.any() && !self.listedApps.any() && self.listedFavorites.any() && self.activeTab() !== 'favorites') {
+          self.activeTab('favorites');
+        }
+      }
+    });
 
     var filterFn = function(i) {
       // Filtering function for search box
@@ -88,7 +102,9 @@ document.addEventListener("DOMContentLoaded", function() {
     };
 
     self.launchApp = function(app) {
-      chrome.management.launchApp(app.id());
+      if (typeof chrome.management.launchApp === "function") {
+        chrome.management.launchApp(app.id());
+      }
     };
 
     self.launchOptions = function(ext) {
@@ -148,7 +164,10 @@ document.addEventListener("DOMContentLoaded", function() {
       self.activeProfile(undefined);
     };
 
-    self.toggleExtension = function(e) {
+    self.toggleExtension = function(e, event) {
+      if (event) {
+        event.stopPropagation();
+      }
       e.toggle();
       self.unsetProfile();
     }
@@ -174,6 +193,51 @@ document.addEventListener("DOMContentLoaded", function() {
     vm = new ExtensityViewModel();
     ko.bindingProvider.instance = new ko.secureBindingsProvider({});
     ko.applyBindings(vm, document.body);
+    
+    // Initialize Lucide icons after Knockout bindings
+    function initLucideIcons() {
+      try {
+        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+          lucide.createIcons();
+        } else {
+          console.warn('Lucide Icons não está disponível');
+        }
+      } catch (e) {
+        console.error('Erro ao inicializar Lucide Icons:', e);
+      }
+    }
+    
+    // Wait a bit for DOM to be ready, then initialize
+    setTimeout(function() {
+      initLucideIcons();
+    }, 100);
+    
+    // Also initialize after DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initLucideIcons, 50);
+      });
+    } else {
+      // DOM already ready
+      setTimeout(initLucideIcons, 50);
+    }
+    
+    // Re-initialize icons when templates are rendered
+    var observer = new MutationObserver(function(mutations) {
+      var hasNewIcons = false;
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length > 0) {
+          hasNewIcons = true;
+        }
+      });
+      if (hasNewIcons) {
+        setTimeout(initLucideIcons, 10);
+      }
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
   });
 
   // Workaround for Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=307912

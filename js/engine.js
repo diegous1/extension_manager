@@ -128,9 +128,9 @@ var ProfileModel = function(name, items) {
   };
 
   var icons = {
-    "__default": "fa-user-circle-o",
-    "__always_on": "fa-lightbulb-o",
-    "__favorites": "fa-star"
+    "__default": "user-circle",
+    "__always_on": "lightbulb",
+    "__favorites": "star"
   }
 
   self.name = ko.observable(name);
@@ -254,9 +254,12 @@ var ExtensionModel = function(e) {
 
   // Get the smallest available icon.
   var smallestIcon = function(icons) {
+    if (!Array.isArray(icons) || icons.length === 0) {
+      return "images/icon16.png";
+    }
     var smallest = _(icons).chain().pluck('size').min().value();
     var icon = _(icons).find({size: smallest});
-    return (icon && icon.url) || '';
+    return (icon && icon.url) || "images/icon16.png";
   };
 
   self.id = ko.observable(item.id);
@@ -317,6 +320,9 @@ var ExtensionCollectionModel = function() {
   }).extend({pluckable: 'id', toggleable: null});
 
   self.apps = ko.computed(function() {
+    if (typeof chrome.management.launchApp !== "function") {
+      return [];
+    }
     return typeFilter(["hosted_app", "packaged_app", "legacy_packaged_app"]);
   }).extend({pluckable: 'id', toggleable: null});
 
@@ -337,6 +343,10 @@ var ExtensionCollectionModel = function() {
 
   // Initialize
   chrome.management.getAll(function(results) {
+    if (chrome.runtime.lastError) {
+      console.warn("chrome.management.getAll failed:", chrome.runtime.lastError.message);
+      return;
+    }
     _(results).chain()
       .sortBy(function(i) { return i.name.toUpperCase(); })
       .each(function(i){

@@ -17,5 +17,8 @@
   "background": {
     "service_worker": "js/migration.js"
   },
-  "permissions": ["management","storage"]
+  "permissions": ["management","storage"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self';"
+  }
 }

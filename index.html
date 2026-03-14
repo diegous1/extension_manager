@@ -1,1 +1,288 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><!-- Includes --><title>Extensity</title><link rel="stylesheet" type="text/css" href="styles/normalize.css" /><link rel="stylesheet" type="text/css" href="styles/font-awesome.min.css" /><link rel="stylesheet" type="text/css" href="styles/index.css" /><script type="text/javascript" src="js/libs/underscore-min.js"></script><script type="text/javascript" src="js/libs/underscore.string.min.js"></script><script type="text/javascript" src="js/libs/knockout-3.5.1.js"></script><script type="text/javascript" src="js/libs/knockout-secure-binding.min.js"></script><script type="text/javascript" src="js/engine.js"></script><script type="text/javascript" src="js/index.js"></script></head><body><section id="header" class="main" data-sbind="if: opts.showHeader"><h1><a id="title" href="https://chrome.google.com/webstore/detail/jjmflmamggggndanpgfnpelongoepncg" target="_blank"><img src="images/icon48.png" width="16px" height="16px" />&nbsp;Extensity</a><br/><!-- Ações --><a href="options.html" class="page" target="_blank"><i class="fa fa-cog" alt="Opções" title="Opções do Extensity"></i></a><a href="profiles.html" class="page" target="_blank"><i class="fa fa-user-circle-o" alt="Perfis" title="Perfis"></i></a><a href="chrome://extensions" class="page" id="chrome-extensions" target="_blank" data-sbind="click: openChromeExtensions"><i class="fa fa-puzzle-piece" alt="Extensões do Chrome" title="Extensões do Chrome"></i></a><a href="#" class="switch" data-sbind="click: switch.flip"><i class="fa" data-sbind="css: switch.toggleStyle" alt="Desativar extensões habilitadas. Clique novamente para alternar." title="Desativar extensões habilitadas. Clique novamente para alternar."></i></a></h1></section><section id="search" class="main" data-sbind="if: opts.searchBox"><p><i class="fa fa-search"></i><input type="text" data-sbind="value: search.q, valueUpdate: 'keyup'" tabindex="1" autofocus /></p></section><section id="content" class="main"><!-- Perfis --><section id="profiles" data-sbind="if: listedProfiles.any, visible: !search.q"><h1>Perfis</h1><ul data-sbind="foreach: listedProfiles"><li class="app" data-sbind="click: $parent.setProfile"><i class="fa fa-check" alt="ativo" data-sbind="visible: name() == $parent.activeProfile()"></i><i class="fa fa-lightbulb-o" alt="perfil" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__always_on'"></i><i class="fa fa-star" alt="perfil" data-sbind="visible: name()!=$parent.activeProfile() && name()=='__favorites'"></i><i class="fa fa-user-circle-o" alt="perfil" data-sbind="visible: name()!=$parent.activeProfile() && !reserved()"></i><span data-sbind="text: short_name"></span></li></ul></section><!-- Favoritos --><section data-sbind="if: listedFavorites.any"><h1 data-sbind="visible: listedFavorites.any">Favoritos</h1><ul data-sbind="template: {name: 'item-template', foreach: listedFavorites}"></ul></section><!-- Apps primeiro, agrupados --><section data-sbind="if: opts.appsFirst() && opts.groupApps()"><h1 data-sbind="visible: listedApps.any">Aplicativos</h1><ul data-sbind="template: {name: 'item-template', foreach: listedApps}"></ul><h1 data-sbind="visible: listedExtensions.any">Extensões</h1><ul data-sbind="template: {name: 'item-template', foreach: listedExtensions}"></ul></section><!-- Extensões primeiro, agrupadas --><section data-sbind="if: !opts.appsFirst() && opts.groupApps()"><h1 data-sbind="visible: listedExtensions.any">Extensões</h1><ul data-sbind="template: {name: 'item-template', foreach: listedExtensions}"></ul><h1 data-sbind="visible: listedApps.any">Aplicativos</h1><ul data-sbind="template: {name: 'item-template', foreach: listedApps}"></ul></section><!-- Aplicativos e extensões misturados --><section data-sbind="if: !opts.groupApps()"><h1 data-sbind="visible: listedItems.any">Extensões &amp; Aplicativos</h1><ul data-sbind="template: {name: 'item-template', foreach: listedItems}"></ul></section><!-- Nenhum item na lista --><section data-sbind="visible: emptyItems"><p class="empty"><i class="fa fa-exclamation-triangle"></i><br />Nenhuma extensão ou aplicativo encontrado.</p></section></section><!-- Workaround for Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=307912 --><div id="workaround-307912" style="display: none; height: 1px;"></div><script type="text/html" id="item-template"><!-- ko if: !isApp() --><li class="extension" data-sbind="click: $parent.toggleExtension, css:{disabled: disabled}"><img width="16px" height="16px" data-sbind="attr:{src:icon}" /><span data-sbind="text: short_name"></span><i class="fa fa-flask" title="Desenvolvimento" alt="Desenvolvimento" data-sbind="visible: is_development"></i><i class="fa fa-gear" title="Opções" alt="Opções" data-sbind="visible: $parent.opts.showOptions() && optionsUrl() && !disabled(), click: $parent.launchOptions, clickBubble: false"></i></li><!-- /ko --><!-- ko if: isApp() --><li class="app" data-sbind="click: $parent.launchApp"><img width="16px" height="16px" data-sbind="attr:{src:icon}" /><span data-sbind="text: short_name"></span><i class="fa fa-flask" title="Desenvolvimento" alt="Desenvolvimento" data-sbind="visible: is_development"></i><i class="fa fa-gear" title="Opções" alt="Opções" data-sbind="visible: $parent.opts.showOptions() && optionsUrl() && !disabled(), click: $parent.launchOptions, clickBubble: false"></i></li><!-- /ko --></script></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Includes -->
+    <title>Extensity</title>
+    <script type="text/javascript" src="js/libs/lucide.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="styles/index.css" />
+    <script type="text/javascript" src="js/libs/underscore-min.js"></script>
+    <script
+      type="text/javascript"
+      src="js/libs/underscore.string.min.js"
+    ></script>
+    <script type="text/javascript" src="js/libs/knockout-3.5.1.js"></script>
+    <script
+      type="text/javascript"
+      src="js/libs/knockout-secure-binding.min.js"
+    ></script>
+    <script type="text/javascript" src="js/engine.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+  </head>
+  <body>
+    <section id="header" class="main" data-sbind="if: opts.showHeader">
+      <h1>
+        <a
+          id="title"
+          href="https://chrome.google.com/webstore/detail/jjmflmamggggndanpgfnpelongoepncg"
+          target="_blank"
+          rel="noopener"
+          ><img
+            src="images/icon48.png"
+            width="20px"
+            height="20px"
+            alt="Extensity"
+            title="Extensity"
+          />Extensity</a
+        >
+        <div class="header-actions">
+          <a href="options.html" class="page" target="_blank" rel="noopener"
+            ><i data-lucide="settings" alt="Opções" title="Opções do Extensity"></i></a
+          ><a href="profiles.html" class="page" target="_blank" rel="noopener"
+            ><i data-lucide="user-circle" alt="Perfis" title="Perfis"></i></a
+          ><a
+            href="chrome://extensions"
+            class="page"
+            id="chrome-extensions"
+            target="_blank"
+            rel="noopener"
+            data-sbind="click: openChromeExtensions"
+            ><i
+              data-lucide="puzzle"
+              alt="Extensões do Chrome"
+              title="Extensões do Chrome"
+            ></i></a
+          ><a href="#" class="switch" data-sbind="click: switch.flip"
+            ><i
+              data-lucide="toggle-right"
+              class="icon-toggle"
+              data-sbind="attr: {'data-lucide': switch.toggleIcon()}"
+              alt="Desativar extensões habilitadas. Clique novamente para alternar."
+              title="Desativar extensões habilitadas. Clique novamente para alternar."
+            ></i
+          ></a>
+        </div>
+      </h1>
+    </section>
+    <section id="search" class="main" data-sbind="if: opts.searchBox">
+      <p>
+        <label for="search-input" class="sr-only">Buscar extensões</label>
+        <i data-lucide="search"></i
+        ><input
+          id="search-input"
+          type="text"
+          data-sbind="value: search.q, valueUpdate: 'keyup'"
+          tabindex="1"
+          autofocus
+          placeholder="Buscar extensões..."
+          title="Buscar extensões"
+          aria-label="Buscar extensões"
+        />
+      </p>
+    </section>
+    <section id="content" class="main">
+      <!-- Perfis -->
+      <section
+        id="profiles"
+        data-sbind="if: listedProfiles.any, visible: !search.q"
+      >
+        <h1>Perfis</h1>
+        <ul data-sbind="foreach: listedProfiles">
+          <li class="app" data-sbind="click: $parent.setProfile">
+            <i
+              data-lucide="check"
+              class="icon-check"
+              alt="ativo"
+              data-sbind="visible: name() == $parent.activeProfile()"
+            ></i
+            ><i
+              data-lucide="lightbulb"
+              class="icon-lightbulb"
+              alt="perfil"
+              data-sbind="visible: name()!=$parent.activeProfile() && name()=='__always_on'"
+            ></i
+            ><i
+              data-lucide="star"
+              class="icon-star"
+              alt="perfil"
+              data-sbind="visible: name()!=$parent.activeProfile() && name()=='__favorites'"
+            ></i
+            ><i
+              data-lucide="user-circle"
+              class="icon-user"
+              alt="perfil"
+              data-sbind="visible: name()!=$parent.activeProfile() && !reserved(), attr: {'data-lucide': icon()}"
+            ></i
+            ><span data-sbind="text: short_name"></span>
+          </li>
+        </ul>
+      </section>
+      <!-- Tabs Navigation -->
+      <div class="tabs-container" data-sbind="if: opts.groupApps()">
+        <div class="tabs">
+          <button 
+            class="tab-button" 
+            data-sbind="click: function() { activeTab('extensions'); }, css: { active: activeTab() === 'extensions' }, visible: listedExtensions.any"
+          >
+            Extensões
+            <span class="tab-count" data-sbind="text: '(' + listedExtensions.count() + ')'"></span>
+          </button>
+          <button 
+            class="tab-button" 
+            data-sbind="click: function() { activeTab('apps'); }, css: { active: activeTab() === 'apps' }, visible: listedApps.any"
+          >
+            Aplicativos
+            <span class="tab-count" data-sbind="text: '(' + listedApps.count() + ')'"></span>
+          </button>
+          <button 
+            class="tab-button" 
+            data-sbind="click: function() { activeTab('favorites'); }, css: { active: activeTab() === 'favorites' }, visible: listedFavorites.any"
+          >
+            Favoritos
+            <span class="tab-count" data-sbind="text: '(' + listedFavorites.count() + ')'"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Favoritos (sempre visível quando há favoritos) -->
+      <section data-sbind="if: listedFavorites.any && (!opts.groupApps() || activeTab() === 'favorites')">
+        <ul
+          data-sbind="template: {name: 'item-template', foreach: listedFavorites}"
+          class="extensions-list"
+        ></ul>
+      </section>
+      
+      <!-- Extensões Tab -->
+      <section data-sbind="if: opts.groupApps() && activeTab() === 'extensions'">
+        <ul
+          data-sbind="template: {name: 'item-template', foreach: listedExtensions}"
+          class="extensions-list"
+        ></ul>
+      </section>
+      
+      <!-- Apps Tab -->
+      <section data-sbind="if: opts.groupApps() && activeTab() === 'apps'">
+        <ul
+          data-sbind="template: {name: 'item-template', foreach: listedApps}"
+          class="extensions-list"
+        ></ul>
+      </section>
+      
+      <!-- Modo não agrupado (todas juntas) -->
+      <section data-sbind="if: !opts.groupApps()">
+        <ul
+          data-sbind="template: {name: 'item-template', foreach: listedItems}"
+          class="extensions-list"
+        ></ul>
+      </section>
+      <!-- Nenhum item na lista -->
+      <section data-sbind="visible: emptyItems">
+        <p class="empty">
+          <i data-lucide="alert-triangle"></i><br />Nenhuma extensão ou
+          aplicativo encontrado.
+        </p>
+      </section>
+    </section>
+    <!-- Workaround for Chrome bug https://bugs.chromium.org/p/chromium/issues/detail?id=307912 -->
+    <div id="workaround-307912"></div>
+    <script type="text/html" id="item-template">
+      <!-- ko if: !isApp() -->
+      <li
+        class="extension-item"
+        data-sbind="css:{disabled: disabled, enabled: !disabled()}"
+      >
+        <!-- Toggle Switch -->
+        <button 
+          class="toggle-switch"
+          data-sbind="click: function(data, event) { $parent.toggleExtension(data, event); }, attr: {'aria-label': disabled() ? 'Ativar extensão' : 'Desativar extensão', 'aria-pressed': !disabled()}"
+          title="Clique para ativar/desativar"
+        >
+          <i 
+            data-lucide="toggle-right" 
+            class="toggle-icon"
+            data-sbind="attr: {'data-lucide': disabled() ? 'toggle-left' : 'toggle-right'}"
+          ></i>
+        </button>
+        
+        <!-- Extension Icon -->
+        <img 
+          width="20px" 
+          height="20px" 
+          class="extension-icon"
+          data-sbind="attr:{src:icon, alt: short_name(), title: short_name()}" 
+          alt="Ícone da extensão" 
+          title="Ícone da extensão" 
+        />
+        
+        <!-- Extension Name -->
+        <span class="extension-name" data-sbind="text: short_name"></span>
+        
+        <!-- Development Badge -->
+        <i
+          data-lucide="flask-conical"
+          class="icon-flask"
+          title="Desenvolvimento"
+          alt="Desenvolvimento"
+          data-sbind="visible: is_development"
+        ></i>
+        
+        <!-- Options Button -->
+        <button
+          class="options-button"
+          data-sbind="visible: $parent.opts.showOptions() && optionsUrl() && !disabled(), click: function(data, event) { $parent.launchOptions(data); if(event) event.stopPropagation(); }, clickBubble: false"
+          title="Opções"
+          aria-label="Abrir opções"
+        >
+          <i data-lucide="settings" class="icon-settings"></i>
+        </button>
+      </li>
+      <!-- /ko --><!-- ko if: isApp() -->
+      <li class="extension-item app">
+        <!-- App Launch Button (no toggle for apps) -->
+        <button 
+          class="app-launch-button"
+          data-sbind="click: function(data, event) { $parent.launchApp(data); if(event) event.stopPropagation(); }"
+          title="Abrir aplicativo"
+          aria-label="Abrir aplicativo"
+        >
+          <i data-lucide="play-circle" class="play-icon"></i>
+        </button>
+        
+        <!-- App Icon -->
+        <img 
+          width="20px" 
+          height="20px" 
+          class="extension-icon"
+          data-sbind="attr:{src:icon, alt: short_name(), title: short_name()}" 
+          alt="Ícone do aplicativo" 
+          title="Ícone do aplicativo" 
+        />
+        
+        <!-- App Name -->
+        <span class="extension-name" data-sbind="text: short_name"></span>
+        
+        <!-- Development Badge -->
+        <i
+          data-lucide="flask-conical"
+          class="icon-flask"
+          title="Desenvolvimento"
+          alt="Desenvolvimento"
+          data-sbind="visible: is_development"
+        ></i>
+        
+        <!-- Options Button -->
+        <button
+          class="options-button"
+          data-sbind="visible: $parent.opts.showOptions() && optionsUrl() && !disabled(), click: function(data, event) { $parent.launchOptions(data); if(event) event.stopPropagation(); }, clickBubble: false"
+          title="Opções"
+          aria-label="Abrir opções"
+        >
+          <i data-lucide="settings" class="icon-settings"></i>
+        </button>
+      </li>
+      <!-- /ko -->
+    </script>
+  </body>
+</html>
